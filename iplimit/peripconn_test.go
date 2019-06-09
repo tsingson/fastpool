@@ -1,4 +1,4 @@
-package pool
+package iplimit
 
 import (
 	"testing"
@@ -19,34 +19,34 @@ func testIPxUint32(t *testing.T, n uint32) {
 }
 
 func TestPerIPConnCounter(t *testing.T) {
-	var cc perIPConnCounter
+	var cc PerIPConnCounter
 
 	expectPanic(t, func() { cc.Unregister(123) })
 
 	for i := 1; i < 100; i++ {
-		if n := cc.Register(123); n != i {
+		if n :=cc. Register(123); n != i {
 			t.Fatalf("Unexpected counter value=%d. Expected %d", n, i)
 		}
 	}
 
-	n := cc.Register(456)
+	n :=cc. Register(456)
 	if n != 1 {
 		t.Fatalf("Unexpected counter value=%d. Expected 1", n)
 	}
 
 	for i := 1; i < 100; i++ {
-		cc.Unregister(123)
+	cc.	Unregister(123)
 	}
-	cc.Unregister(456)
+cc.	Unregister(456)
 
-	expectPanic(t, func() { cc.Unregister(123) })
-	expectPanic(t, func() { cc.Unregister(456) })
+	expectPanic(t, func() {cc. Unregister(123) })
+	expectPanic(t, func() {cc. Unregister(456) })
 
-	n = cc.Register(123)
+	n =cc. Register(123)
 	if n != 1 {
 		t.Fatalf("Unexpected counter value=%d. Expected 1", n)
 	}
-	cc.Unregister(123)
+cc.	Unregister(123)
 }
 
 func expectPanic(t *testing.T, f func()) {

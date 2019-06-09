@@ -8,22 +8,6 @@ import (
 	"time"
 )
 
-// NewPipeConns returns new bi-directional connection pipe.
-func NewPipeConns() *PipeConns {
-	ch1 := make(chan *byteBuffer, 4)
-	ch2 := make(chan *byteBuffer, 4)
-
-	pc := &PipeConns{
-		stopCh: make(chan struct{}),
-	}
-	pc.c1.rCh = ch1
-	pc.c1.wCh = ch2
-	pc.c2.rCh = ch2
-	pc.c2.wCh = ch1
-	pc.c1.pc = pc
-	pc.c2.pc = pc
-	return pc
-}
 
 // PipeConns provides bi-directional connection pipe,
 // which use in-process memory as a transport.
@@ -45,6 +29,23 @@ type PipeConns struct {
 	stopChLock sync.Mutex
 }
 
+
+// NewPipeConns returns new bi-directional connection pipe.
+func NewPipeConns() *PipeConns {
+	ch1 := make(chan *byteBuffer, 4)
+	ch2 := make(chan *byteBuffer, 4)
+
+	pc := &PipeConns{
+		stopCh: make(chan struct{}),
+	}
+	pc.c1.rCh = ch1
+	pc.c1.wCh = ch2
+	pc.c2.rCh = ch2
+	pc.c2.wCh = ch1
+	pc.c1.pc = pc
+	pc.c2.pc = pc
+	return pc
+}
 // Conn1 returns the first end of bi-directional pipe.
 //
 // Data written to Conn1 may be read from Conn2.

@@ -1,4 +1,4 @@
-package pool
+package iplimit
 
 import (
 	"fmt"
@@ -6,13 +6,13 @@ import (
 	"sync"
 )
 
-type perIPConnCounter struct {
+type PerIPConnCounter struct {
 	pool sync.Pool
 	lock sync.Mutex
 	m    map[uint32]int
 }
 
-func (cc *perIPConnCounter) Register(ip uint32) int {
+func (cc *PerIPConnCounter) Register(ip uint32) int {
 	cc.lock.Lock()
 	if cc.m == nil {
 		cc.m = make(map[uint32]int)
@@ -23,11 +23,11 @@ func (cc *perIPConnCounter) Register(ip uint32) int {
 	return n
 }
 
-func (cc *perIPConnCounter) Unregister(ip uint32) {
+func (cc *PerIPConnCounter) Unregister(ip uint32) {
 	cc.lock.Lock()
 	if cc.m == nil {
 		cc.lock.Unlock()
-		panic("BUG: perIPConnCounter.Register() wasn't called")
+		panic("BUG: PerIPConnCounter.Register() wasn't called")
 	}
 	n := cc.m[ip] - 1
 	if n < 0 {
@@ -38,39 +38,39 @@ func (cc *perIPConnCounter) Unregister(ip uint32) {
 	cc.lock.Unlock()
 }
 
-type perIPConn struct {
+type PerIPConn struct {
 	net.Conn
 
 	ip               uint32
-	perIPConnCounter *perIPConnCounter
+	perIPConnCounter *PerIPConnCounter
 }
 
-func acquirePerIPConn(conn net.Conn, ip uint32, counter *perIPConnCounter) *perIPConn {
+func AcquirePerIPConn(conn net.Conn, ip uint32, counter *PerIPConnCounter) *PerIPConn {
 	v := counter.pool.Get()
 	if v == nil {
-		v = &perIPConn{
+		v = &PerIPConn{
 			perIPConnCounter: counter,
 		}
 	}
-	c := v.(*perIPConn)
+	c := v.(*PerIPConn)
 	c.Conn = conn
 	c.ip = ip
 	return c
 }
 
-func releasePerIPConn(c *perIPConn) {
+func ReleasePerIPConn(c *PerIPConn) {
 	c.Conn = nil
 	c.perIPConnCounter.pool.Put(c)
 }
 
-func (c *perIPConn) Close() error {
+func (c *PerIPConn) Close() error {
 	err := c.Conn.Close()
 	c.perIPConnCounter.Unregister(c.ip)
-	releasePerIPConn(c)
+	ReleasePerIPConn(c)
 	return err
 }
 
-func getUint32IP(c net.Conn) uint32 {
+func GetUint32IP(c net.Conn) uint32 {
 	return IP2uint32(GetConnIP4(c))
 }
 
